@@ -24,8 +24,12 @@ module TfOutputs
       def get_outputs_from_file
         @file_paths.each do |path, _use_sensitive|
           parser = JSON.parse(File.read(path))
-          parser['modules'].each do |tf_module|
-            parse_outputs(tf_module)
+          if parser['version'] < 4
+            parser['modules'].each do |tf_module|
+              parse_outputs(tf_module)
+            end
+          else
+            parse_outputs4(parser)
           end
         end
       end
@@ -37,6 +41,13 @@ module TfOutputs
             @outputs.each { |output| raise "Duplicate key found #{k}" if output.key?(k) }
             @outputs.push(k => v)
           end
+        end
+      end
+      protected
+      def parse_outputs4(tf_module)
+        tf_module['outputs'].collect do |k, v|
+          @outputs.each { |output| raise "Duplicate key found #{k}" if output.key?(k) }
+          @outputs.push(k => v)
         end
       end
 
